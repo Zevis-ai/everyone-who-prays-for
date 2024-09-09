@@ -267,7 +267,6 @@ nameSelect.addEventListener('change', () => {
         void prayerRequest.offsetWidth;
         prayerRequest.classList.add('slide-in');
         localStorage.setItem('selectedName', nameSelect.value);
-        createEmojiRain(selectedUser.emoji);
     }
 });
 
@@ -367,12 +366,14 @@ function displayAllPrayers() {
 let currentDay = 1;
 
 function updateDayCount() {
-    const startDate = new Date(localStorage.getItem('prayerStartDate'));
-    const today = new Date();
-    const daysPassed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-    currentDay = Math.min(Math.max(daysPassed, 1), 40);
-    document.getElementById('dayCount').textContent = `יום ${currentDay} מתוך 40`;
-    updatePrayerStats();
+    db.ref('prayerStartDate').once('value').then((snapshot) => {
+        const startDate = new Date(snapshot.val());
+        const today = new Date();
+        const daysPassed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        currentDay = Math.min(Math.max(daysPassed, 1), 40);
+        document.getElementById('dayCount').textContent = `יום ${currentDay} מתוך 40`;
+        updatePrayerStats();
+    });
 }
 
 document.getElementById('setStartDate').addEventListener('click', setStartDate);
@@ -380,13 +381,31 @@ document.getElementById('setStartDate').addEventListener('click', setStartDate);
 function setStartDate() {
     const startDate = document.getElementById('startDate').value;
     if (startDate) {
-        localStorage.setItem('prayerStartDate', startDate);
-        updateDayCount();
-        alert('תאריך ההתחלה נקבע בהצלחה!');
+        db.ref('prayerStartDate').set(startDate).then(() => {
+            updateDayCount();
+            alert('תאריך ההתחלה נקבע בהצלחה!');
+        }).catch((error) => {
+            console.error('שגיאה בשמירת תאריך ההתחלה: ', error);
+        });
     } else {
         alert('אנא בחר תאריך תחילה');
     }
 }
+
+document.getElementById('updateCurrentDay').addEventListener('click', () => {
+    const newDay = document.getElementById('setCurrentDay').value;
+    if (newDay && newDay >= 1 && newDay <= 40) {
+        db.ref('currentDay').set(parseInt(newDay)).then(() => {
+            currentDay = parseInt(newDay);
+            updateDayCount();
+            alert('היום הנוכחי עודכן בהצלחה!');
+        }).catch((error) => {
+            console.error('שגיאה בעדכון היום הנוכחי: ', error);
+        });
+    } else {
+        alert('אנא הכנס מספר תקין בין 1 ל-40');
+    }
+});
 
 function updatePrayerStats() {
     const daysLeft = Math.max(40 - currentDay, 0);

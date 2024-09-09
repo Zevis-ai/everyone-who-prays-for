@@ -219,7 +219,76 @@ button:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-</style></head><body><div class="container fade-in"><h1>כל המתפלל על חברו נענה תחילה</h1><label for="name">בחר את שמך:</label><select id="name"></select><p id="prayerRequest" class="slide-in"></p><p id="dayCount" class="slide-in">יום 1 מתוך 40</p><div id="dateDisplay"><p>תאריך עברי: <span id="hebrewDate"></span></p><p>תאריך לועזי: <span id="gregorianDate"></span></p></div><label for="prayerDone">סמן אם כבר אמרת את הפרק:</label><input type="checkbox" id="prayerDone" /><button id="submit">שמור</button><div id="prayerText" class="slide-in"></div><div id="allPrayers" class="slide-in"><h3>כל בקשות התפילה:</h3><ul id="prayerList"></ul></div><div id="prayerStatus" class="slide-in"><h3>סטטוס תפילה:</h3><ul id="prayerStatusList"></ul></div><div id="prayerStats" class="slide-in"><p>ימים שעברו: <span id="daysPassed"></span></p><p>ימים שנותרו: <span id="daysLeft"></span></p><p>אחוז השלמה: <span id="completionPercentage"></span></p><p>מספר אנשים: <span id="totalPeople"></span></p></div></div><button id="adminBtn">ניהול</button><div id="adminSection" style="display:none;"><h2>ניהול</h2><label for="startDate">בחר תאריך התחלה:</label><input type="date" id="startDate"><button id="setStartDate">קבע תאריך התחלה</button><label for="newName">הוסף שם לתפילה:</label><input type="text" id="newName"><label for="newPrayer">הוסף בקשת תפילה:</label><input type="text" id="newPrayer"><label for="newEmoji">הוסף אימוג'י:</label><input type="text" id="newEmoji"><button id="addName">הוסף</button><label for="setCurrentDay">הגדר את היום הנוכחי (1-40):</label><input type="number" id="setCurrentDay" min="1" max="40"><button id="updateCurrentDay">עדכן</button></div><script>
+
+.checkbox-wrapper {
+    display: inline-block;
+    position: relative;
+    padding-right: 35px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 22px;
+    user-select: none;
+}
+
+.checkbox-wrapper input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #eee;
+    border: 2px solid blue;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.checkbox-wrapper:hover input ~ .checkmark {
+    background-color: #ccc;
+    border: 2px solid red;
+}
+
+.checkbox-wrapper input:checked ~ .checkmark {
+    background-color: #4CAF50;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-wrapper input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-wrapper .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+@keyframes checkmark-pop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.checkbox-wrapper input:checked ~ .checkmark:after {
+    animation: checkmark-pop 0.3s ease-out;
+}
+</style></head><body><div class="container fade-in"><h1>כל המתפלל על חברו נענה תחילה</h1><label for="name">בחר את שמך:</label><select id="name"></select><p id="prayerRequest" class="slide-in"></p><p id="dayCount" class="slide-in">יום 1 מתוך 40</p><div id="dateDisplay"><p>תאריך עברי: <span id="hebrewDate"></span></p><p>תאריך לועזי: <span id="gregorianDate"></span></p></div><label class="checkbox-wrapper">סמן אם כבר אמרת את הפרק<input type="checkbox" id="prayerDone"><span class="checkmark"></span></label><button id="submit">שמור</button><div id="prayerText" class="slide-in"></div><div id="allPrayers" class="slide-in"><h3>כל בקשות התפילה:</h3><ul id="prayerList"></ul></div><div id="prayerStatus" class="slide-in"><h3>סטטוס תפילה:</h3><ul id="prayerStatusList"></ul></div><div id="prayerStats" class="slide-in"><p>ימים שעברו: <span id="daysPassed"></span></p><p>ימים שנותרו: <span id="daysLeft"></span></p><p>אחוז השלמה: <span id="completionPercentage"></span></p><p>מספר אנשים: <span id="totalPeople"></span></p></div></div><button id="adminBtn">ניהול</button><div id="adminSection" style="display:none;"><h2>ניהול</h2><label for="startDate">בחר תאריך התחלה:</label><input type="date" id="startDate"><button id="setStartDate">קבע תאריך התחלה</button><label for="newName">הוסף שם לתפילה:</label><input type="text" id="newName"><label for="newPrayer">הוסף בקשת תפילה:</label><input type="text" id="newPrayer"><label for="newEmoji">הוסף אימוג'י:</label><input type="text" id="newEmoji"><button id="addName">הוסף</button><label for="setCurrentDay">הגדר את היום הנוכחי (1-40):</label><input type="number" id="setCurrentDay" min="1" max="40"><button id="updateCurrentDay">עדכן</button></div><script>
 const firebaseConfig = {
     apiKey: "AIzaSyDwJfwmRD5ev12tCLFAPn07xdA8aYKWjsM",
     authDomain: "everyone-who-prays-for.firebaseapp.com",

@@ -174,6 +174,11 @@ button:hover {
     margin: 20px 0;
 }
 
+#dateDisplay {
+    margin-top: 20px;
+    text-align: center;
+}
+
 #prayerStats {
     background-color: #e8eaf6;
     border-radius: 8px;
@@ -214,7 +219,7 @@ button:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-</style></head><body><div class="container fade-in"><h1>כל המתפלל על חברו נענה תחילה</h1><label for="name">בחר את שמך:</label><select id="name"></select><p id="prayerRequest" class="slide-in"></p><p id="dayCount" class="slide-in">יום 1 מתוך 40</p><label for="prayerDone">סמן אם כבר אמרת את הפרק:</label><input type="checkbox" id="prayerDone" /><button id="submit">שמור</button><div id="prayerText" class="slide-in"></div><div id="allPrayers" class="slide-in"><h3>כל בקשות התפילה:</h3><ul id="prayerList"></ul></div><div id="prayerStatus" class="slide-in"><h3>סטטוס תפילה:</h3><ul id="prayerStatusList"></ul></div><div id="prayerStats" class="slide-in"><p>ימים שעברו: <span id="daysPassed"></span></p><p>ימים שנותרו: <span id="daysLeft"></span></p><p>אחוז השלמה: <span id="completionPercentage"></span></p><p>מספר אנשים: <span id="totalPeople"></span></p></div></div><button id="adminBtn">ניהול</button><div id="adminSection" style="display:none;"><h2>ניהול</h2><label for="newName">הוסף שם לתפילה:</label><input type="text" id="newName"><label for="newPrayer">הוסף בקשת תפילה:</label><input type="text" id="newPrayer"><label for="newEmoji">הוסף אימוג'י:</label><input type="text" id="newEmoji"><button id="addName">הוסף</button></div><script>
+</style></head><body><div class="container fade-in"><h1>כל המתפלל על חברו נענה תחילה</h1><label for="name">בחר את שמך:</label><select id="name"></select><p id="prayerRequest" class="slide-in"></p><p id="dayCount" class="slide-in">יום 1 מתוך 40</p><div id="dateDisplay"><p>תאריך עברי: <span id="hebrewDate"></span></p><p>תאריך לועזי: <span id="gregorianDate"></span></p></div><label for="prayerDone">סמן אם כבר אמרת את הפרק:</label><input type="checkbox" id="prayerDone" /><button id="submit">שמור</button><div id="prayerText" class="slide-in"></div><div id="allPrayers" class="slide-in"><h3>כל בקשות התפילה:</h3><ul id="prayerList"></ul></div><div id="prayerStatus" class="slide-in"><h3>סטטוס תפילה:</h3><ul id="prayerStatusList"></ul></div><div id="prayerStats" class="slide-in"><p>ימים שעברו: <span id="daysPassed"></span></p><p>ימים שנותרו: <span id="daysLeft"></span></p><p>אחוז השלמה: <span id="completionPercentage"></span></p><p>מספר אנשים: <span id="totalPeople"></span></p></div></div><button id="adminBtn">ניהול</button><div id="adminSection" style="display:none;"><h2>ניהול</h2><label for="startDate">בחר תאריך התחלה:</label><input type="date" id="startDate"><button id="setStartDate">קבע תאריך התחלה</button><label for="newName">הוסף שם לתפילה:</label><input type="text" id="newName"><label for="newPrayer">הוסף בקשת תפילה:</label><input type="text" id="newPrayer"><label for="newEmoji">הוסף אימוג'י:</label><input type="text" id="newEmoji"><button id="addName">הוסף</button><label for="setCurrentDay">הגדר את היום הנוכחי (1-40):</label><input type="number" id="setCurrentDay" min="1" max="40"><button id="updateCurrentDay">עדכן</button></div><script>
 const firebaseConfig = {
     apiKey: "AIzaSyDwJfwmRD5ev12tCLFAPn07xdA8aYKWjsM",
     authDomain: "everyone-who-prays-for.firebaseapp.com",
@@ -271,11 +276,13 @@ window.addEventListener('load', () => {
         nameSelect.value = savedName;
         nameSelect.dispatchEvent(new Event('change'));
     }
+    updateDayCount();
+    updateDates();
 });
 
 document.getElementById('submit').addEventListener('click', () => {
     const selectedName = nameSelect.value;
-    const day = parseInt(document.getElementById('dayCount').textContent.split(' ')[1]);
+    const day = currentDay;
     const prayerDone = document.getElementById('prayerDone').checked;
 
     db.ref('prayers/' + selectedName + '/day' + day).set({
@@ -333,10 +340,9 @@ document.getElementById('prayerText').textContent = prayerText;
 function updatePrayerStatus() {
     const statusList = document.getElementById('prayerStatusList');
     statusList.innerHTML = '';
-    const day = parseInt(document.getElementById('dayCount').textContent.split(' ')[1]);
 
     users.forEach(user => {
-        db.ref('prayers/' + user.name + '/day' + day).once('value').then((snapshot) => {
+        db.ref('prayers/' + user.name + '/day' + currentDay).once('value').then((snapshot) => {
             const li = document.createElement('li');
             const prayerDone = snapshot.val() && snapshot.val().prayerDone;
             li.textContent = `${user.name} ${user.emoji}: ${prayerDone ? 'התפלל' : 'טרם התפלל'}`;
@@ -357,50 +363,58 @@ function displayAllPrayers() {
     });
 }
 
-updatePrayerStatus();
-displayAllPrayers();
+let currentDay = 1;
 
-const startDate = new Date('2023-06-01');
-const today = new Date();
-const daysPassed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
-const currentDay = Math.min(daysPassed, 40);
-document.getElementById('dayCount').textContent = `יום ${currentDay} מתוך 40`;
+function updateDayCount() {
+    const startDate = new Date(localStorage.getItem('prayerStartDate'));
+    const today = new Date();
+    const daysPassed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    currentDay = Math.min(Math.max(daysPassed, 1), 40);
+    document.getElementById('dayCount').textContent = `יום ${currentDay} מתוך 40`;
+    updatePrayerStats();
+}
+
+document.getElementById('setStartDate').addEventListener('click', setStartDate);
+
+function setStartDate() {
+    const startDate = document.getElementById('startDate').value;
+    if (startDate) {
+        localStorage.setItem('prayerStartDate', startDate);
+        updateDayCount();
+        alert('תאריך ההתחלה נקבע בהצלחה!');
+    } else {
+        alert('אנא בחר תאריך תחילה');
+    }
+}
 
 function updatePrayerStats() {
-    const daysPassed = Math.min(currentDay, 40);
     const daysLeft = Math.max(40 - currentDay, 0);
-    const completionPercentage = Math.round((daysPassed / 40) * 100);
+    const completionPercentage = Math.round((currentDay / 40) * 100);
     const totalPeople = users.length;
 
-    document.getElementById('daysPassed').textContent = daysPassed;
+    document.getElementById('daysPassed').textContent = currentDay;
     document.getElementById('daysLeft').textContent = daysLeft;
     document.getElementById('completionPercentage').textContent = `${completionPercentage}%`;
     document.getElementById('totalPeople').textContent = totalPeople;
 }
 
-updatePrayerStats();
-
-function createEmojiRain(emoji) {
-    const rainContainer = document.createElement('div');
-    rainContainer.style.position = 'fixed';
-    rainContainer.style.top = '0';
-    rainContainer.style.left = '0';
-    rainContainer.style.width = '100%';
-    rainContainer.style.height = '100%';
-    rainContainer.style.pointerEvents = 'none';
-    document.body.appendChild(rainContainer);
-
-    for (let i = 0; i < 15; i++) {
-        const emojiElement = document.createElement('div');
-        emojiElement.textContent = emoji;
-        emojiElement.classList.add('emoji-rain');
-        emojiElement.style.left = `${Math.random() * 100}%`;
-        emojiElement.style.animationDelay = `${Math.random() * 3}s`;
-        rainContainer.appendChild(emojiElement);
-    }
-
-    setTimeout(() => {
-        document.body.removeChild(rainContainer);
-    }, 3000);
+function getHebrewDate() {
+    const now = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric', calendar: 'hebrew' };
+    return new Intl.DateTimeFormat('he-IL', options).format(now);
 }
+
+function getGregorianDate() {
+    const now = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Intl.DateTimeFormat('he-IL', options).format(now);
+}
+
+function updateDates() {
+    document.getElementById('hebrewDate').textContent = getHebrewDate();
+    document.getElementById('gregorianDate').textContent = getGregorianDate();
+}
+
+updatePrayerStatus();
+displayAllPrayers();
 </script></body></html>

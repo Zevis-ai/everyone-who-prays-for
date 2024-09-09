@@ -1,0 +1,406 @@
+<html><head><base href="https://everyone-who-prays-for.firebaseapp.com/"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>40 ימי תפילה - כל המתפלל על חברו נענה תחילה</title><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script><link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Amatic+SC:wght@700&display=swap" rel="stylesheet"><style>
+body {
+    font-family: 'Heebo', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    direction: rtl;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+h1 {
+    font-family: 'Amatic SC', cursive;
+    color: #1a237e;
+    text-align: center;
+    font-size: 3.5em;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+select, input, button {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+select:focus, input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+}
+
+#adminBtn {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: #1a237e;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#adminBtn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+#adminSection {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+#prayerText {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    white-space: pre-wrap;
+    font-size: 18px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+#allPrayers {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+#prayerStatus {
+    background-color: #e8f5e9;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+#prayerStatus:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+#prayerStatus ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.prayed {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.not-prayed {
+    color: #f44336;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 1s ease-out;
+}
+
+.slide-in {
+    animation: slideIn 0.5s ease-out;
+}
+
+#dayCount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1a237e;
+    text-align: center;
+    margin: 20px 0;
+}
+
+#prayerStats {
+    background-color: #e8eaf6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+#prayerStats p {
+    margin: 5px 0;
+}
+
+#prayerStats span {
+    font-weight: bold;
+    color: #1a237e;
+}
+
+.emoji-rain {
+    position: fixed;
+    top: -10%;
+    font-size: 20px;
+    animation: emoji-fall 3s linear infinite;
+}
+
+@keyframes emoji-fall {
+    to { transform: translateY(110vh); }
+}
+
+.prayer-item {
+    background-color: #f1f8e9;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.prayer-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style></head><body><div class="container fade-in"><h1>כל המתפלל על חברו נענה תחילה</h1><label for="name">בחר את שמך:</label><select id="name"></select><p id="prayerRequest" class="slide-in"></p><p id="dayCount" class="slide-in">יום 1 מתוך 40</p><label for="prayerDone">סמן אם כבר אמרת את הפרק:</label><input type="checkbox" id="prayerDone" /><button id="submit">שמור</button><div id="prayerText" class="slide-in"></div><div id="allPrayers" class="slide-in"><h3>כל בקשות התפילה:</h3><ul id="prayerList"></ul></div><div id="prayerStatus" class="slide-in"><h3>סטטוס תפילה:</h3><ul id="prayerStatusList"></ul></div><div id="prayerStats" class="slide-in"><p>ימים שעברו: <span id="daysPassed"></span></p><p>ימים שנותרו: <span id="daysLeft"></span></p><p>אחוז השלמה: <span id="completionPercentage"></span></p><p>מספר אנשים: <span id="totalPeople"></span></p></div></div><button id="adminBtn">ניהול</button><div id="adminSection" style="display:none;"><h2>ניהול</h2><label for="newName">הוסף שם לתפילה:</label><input type="text" id="newName"><label for="newPrayer">הוסף בקשת תפילה:</label><input type="text" id="newPrayer"><label for="newEmoji">הוסף אימוג'י:</label><input type="text" id="newEmoji"><button id="addName">הוסף</button></div><script>
+const firebaseConfig = {
+    apiKey: "AIzaSyDwJfwmRD5ev12tCLFAPn07xdA8aYKWjsM",
+    authDomain: "everyone-who-prays-for.firebaseapp.com",
+    databaseURL: "https://everyone-who-prays-for-default-rtdb.firebaseio.com",
+    projectId: "everyone-who-prays-for",
+    storageBucket: "everyone-who-prays-for.appspot.com",
+    messagingSenderId: "60325762396",
+    appId: "1:60325762396:web:d0406af3dc9f321dea9d99",
+    measurementId: "G-K74ST2R3XW"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let users = [
+    {name: "הלל בן חמדה", prayer: "הצלחה בלימודים", emoji: "📚"},
+    {name: "נתנאל איתמר בן מירה", prayer: "זיווג טוב ומתאים", emoji: "💍"},
+    {name: "נחום זאב בן מרים", prayer: "הצלחה בלימודים", emoji: "📚"},
+    {name: "אריאל בן סיגלית", prayer: "זיווג טוב ומתאים", emoji: "💍"},
+    {name: "שי בן שירה", prayer: "זיווג טוב ומתאים", emoji: "💍"},
+    {name: "משה בן רֵנָה", prayer: "להתפלל במניין נץ בקביעות", emoji: "🌅"},
+    {name: "רונן בן מירה", prayer: "פרנסה בשפע בקלות ובשמחה", emoji: "💵"},
+    {name: "נועם יששכר בן שולמית", prayer: "זיווג טוב ומתאים", emoji: "💍"},
+    {name: "חגי שמעון בן שרית", prayer: "בריאות איתנה", emoji: "💪"},
+    {name: "מנחם בן אסתר", prayer: "ס\"ד קניית דירה", emoji: "🏠"},
+    {name: "איתמר בן נורית", prayer: "הצלחה בכל", emoji: "🎓"}
+];
+
+const nameSelect = document.getElementById('name');
+const prayerRequest = document.getElementById('prayerRequest');
+
+users.forEach(user => {
+    let option = document.createElement('option');
+    option.value = user.name;
+    option.text = user.name; 
+    nameSelect.add(option);
+});
+
+nameSelect.addEventListener('change', () => {
+    const selectedUser = users.find(user => user.name === nameSelect.value);
+    if (selectedUser) {
+        prayerRequest.textContent = `בקשת תפילה: ${selectedUser.prayer} ${selectedUser.emoji}`;
+        prayerRequest.classList.remove('slide-in');
+        void prayerRequest.offsetWidth;
+        prayerRequest.classList.add('slide-in');
+        localStorage.setItem('selectedName', nameSelect.value);
+        createEmojiRain(selectedUser.emoji);
+    }
+});
+
+window.addEventListener('load', () => {
+    const savedName = localStorage.getItem('selectedName');
+    if (savedName) {
+        nameSelect.value = savedName;
+        nameSelect.dispatchEvent(new Event('change'));
+    }
+});
+
+document.getElementById('submit').addEventListener('click', () => {
+    const selectedName = nameSelect.value;
+    const day = parseInt(document.getElementById('dayCount').textContent.split(' ')[1]);
+    const prayerDone = document.getElementById('prayerDone').checked;
+
+    db.ref('prayers/' + selectedName + '/day' + day).set({
+        prayerDone: prayerDone,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+        alert('הנתונים נשמרו בהצלחה!');
+        updatePrayerStatus();
+    }).catch((error) => {
+        console.error('שגיאה בכתיבה למסד הנתונים: ', error);
+    });
+});
+
+document.getElementById('adminBtn').addEventListener('click', () => {
+    const adminPassword = prompt("הכנס סיסמת מנהל");
+    if (adminPassword === "1234") {
+        document.getElementById('adminSection').style.display = 'block';
+    } else {
+        alert("סיסמה שגויה");
+    }
+});
+
+document.getElementById('addName').addEventListener('click', () => {
+    const newName = document.getElementById('newName').value;
+    const newPrayer = document.getElementById('newPrayer').value;
+    const newEmoji = document.getElementById('newEmoji').value;
+
+    if (newName && newPrayer && newEmoji) {
+        users.push({
+            name: newName,
+            prayer: newPrayer,
+            emoji: newEmoji
+        });
+
+        let option = document.createElement('option');
+        option.value = newName;
+        option.text = newName; 
+        nameSelect.add(option);
+
+        alert('שם, בקשה ואימוג\'י נוספו בהצלחה!');
+        displayAllPrayers();
+    } else {
+        alert('נא למלא את כל השדות');
+    }
+});
+
+const prayerText = `מִזְמוֹר לְתוֹדָה: הָרִיעוּ לַיהוָה כָּל הָאָרֶץ.
+עִבְדוּ אֶת יְהוָה בְּשִׂמְחָה בֹּאוּ לְפָנָיו בִּרְנָנָה.
+דְּעוּ כִּי יְהוָה הוּא אֱלֹהִים הוּא עָשָׂנוּ וְלוֹ אֲנַחְנוּ עַמּוֹ וְצֹאן מַרְעִיתוֹ.
+בֹּאוּ שְׁעָרָיו בְּתוֹדָה חֲצֵרֹתָיו בִּתְהִלָּה הוֹדוּ לוֹ בָּרֲכוּ שְׁמוֹ.
+כִּי טוֹב יְהוָה לְעוֹלָם חַסְדּוֹ וְעַד דֹּר וָדֹר אֱמוּנָתוֹ.`;
+
+document.getElementById('prayerText').textContent = prayerText;
+
+function updatePrayerStatus() {
+    const statusList = document.getElementById('prayerStatusList');
+    statusList.innerHTML = '';
+    const day = parseInt(document.getElementById('dayCount').textContent.split(' ')[1]);
+
+    users.forEach(user => {
+        db.ref('prayers/' + user.name + '/day' + day).once('value').then((snapshot) => {
+            const li = document.createElement('li');
+            const prayerDone = snapshot.val() && snapshot.val().prayerDone;
+            li.textContent = `${user.name} ${user.emoji}: ${prayerDone ? 'התפלל' : 'טרם התפלל'}`;
+            li.className = prayerDone ? 'prayed' : 'not-prayed';
+            statusList.appendChild(li);
+        });
+    });
+}
+
+function displayAllPrayers() {
+    const prayerList = document.getElementById('prayerList');
+    prayerList.innerHTML = '';
+    users.forEach(user => {
+        const li = document.createElement('li');
+        li.className = 'prayer-item';
+        li.innerHTML = `<strong>${user.name}</strong>: ${user.prayer}`;
+        prayerList.appendChild(li);
+    });
+}
+
+updatePrayerStatus();
+displayAllPrayers();
+
+const startDate = new Date('2023-06-01');
+const today = new Date();
+const daysPassed = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+const currentDay = Math.min(daysPassed, 40);
+document.getElementById('dayCount').textContent = `יום ${currentDay} מתוך 40`;
+
+function updatePrayerStats() {
+    const daysPassed = Math.min(currentDay, 40);
+    const daysLeft = Math.max(40 - currentDay, 0);
+    const completionPercentage = Math.round((daysPassed / 40) * 100);
+    const totalPeople = users.length;
+
+    document.getElementById('daysPassed').textContent = daysPassed;
+    document.getElementById('daysLeft').textContent = daysLeft;
+    document.getElementById('completionPercentage').textContent = `${completionPercentage}%`;
+    document.getElementById('totalPeople').textContent = totalPeople;
+}
+
+updatePrayerStats();
+
+function createEmojiRain(emoji) {
+    const rainContainer = document.createElement('div');
+    rainContainer.style.position = 'fixed';
+    rainContainer.style.top = '0';
+    rainContainer.style.left = '0';
+    rainContainer.style.width = '100%';
+    rainContainer.style.height = '100%';
+    rainContainer.style.pointerEvents = 'none';
+    document.body.appendChild(rainContainer);
+
+    for (let i = 0; i < 15; i++) {
+        const emojiElement = document.createElement('div');
+        emojiElement.textContent = emoji;
+        emojiElement.classList.add('emoji-rain');
+        emojiElement.style.left = `${Math.random() * 100}%`;
+        emojiElement.style.animationDelay = `${Math.random() * 3}s`;
+        rainContainer.appendChild(emojiElement);
+    }
+
+    setTimeout(() => {
+        document.body.removeChild(rainContainer);
+    }, 3000);
+}
+</script></body></html>

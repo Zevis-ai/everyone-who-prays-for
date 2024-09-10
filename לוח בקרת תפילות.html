@@ -1,0 +1,459 @@
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>לוח בקרת תפילות מעוצב ומונפש</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Heebo', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #6dd5ed, #2193b0);
+    direction: rtl;
+    color: #333;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  }
+  h1, h2 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  }
+  .day-selector {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  select {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #3498db;
+    background-color: #fff;
+    transition: all 0.3s ease;
+  }
+  select:hover {
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+  }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    margin-top: 20px;
+  }
+  th, td {
+    padding: 15px;
+    text-align: right;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  th {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;
+  }
+  tr {
+    background-color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+  }
+  tr:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  .true {
+    color: #27ae60;
+    font-weight: bold;
+  }
+  .false {
+    color: #e74c3c;
+  }
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-top: 30px;
+  }
+  .stat-card {
+    background-color: rgba(236, 240, 241, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    flex: 1;
+    margin: 10px;
+    min-width: 200px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+  }
+  .stat-card h3 {
+    margin-top: 0;
+    color: #2980b9;
+  }
+  .chart-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 30px auto;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .person-stats {
+    display: none;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+  }
+  .loading-circle {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>לוח בקרת תפילות </h1>
+    
+    <div class="day-selector">
+      <label for="daySelect">בחר יום: </label>
+      <select id="daySelect" onchange="fetchData()">
+        <!-- Options will be added here -->
+      </select>
+    </div>
+    
+    <div id="loading" class="loading">
+      <div class="loading-circle"></div>
+    </div>
+
+    <table id="prayerTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>שם</th>
+          <th>סטטוס תפילה</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be inserted here -->
+      </tbody>
+    </table>
+
+    <h2>סטטיסטיקה יומית</h2>
+    <div class="stats">
+      <div class="stat-card">
+        <h3>סך הכל מתפללים</h3>
+        <p id="totalPrayers">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>התפללו היום</h3>
+        <p id="prayedToday">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>אחוז השלמה</h3>
+        <p id="completionRate">0%</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="dailyChart"></canvas>
+    </div>
+
+    <h2>סטטיסטיקה כללית</h2>
+    <div class="stats">
+      <div class="stat-card">
+        <h3>ממוצע תפילות יומי</h3>
+        <p id="averagePrayers">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>יום עם הכי הרבה תפילות</h3>
+        <p id="bestDay">יום 0</p>
+      </div>
+      <div class="stat-card">
+        <h3>יום עם הכי מעט תפילות</h3>
+        <p id="worstDay">יום 0</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="overallChart"></canvas>
+    </div>
+
+    <h2>סטטיסטיקה אישית</h2>
+    <div id="personStats" class="person-stats">
+      <!-- Personal stats will be inserted here -->
+    </div>
+  </div>
+
+<script>
+// Initialize Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDwJfwmRD5ev12tCLFAPn07xdA8aYKWjsM",
+    authDomain: "everyone-who-prays-for.firebaseapp.com",
+    databaseURL: "https://everyone-who-prays-for-default-rtdb.firebaseio.com",
+    projectId: "everyone-who-prays-for",
+    storageBucket: "everyone-who-prays-for.appspot.com",
+    messagingSenderId: "60325762396",
+    appId: "1:60325762396:web:d0406af3dc9f321dea9d99",
+    measurementId: "G-K74ST2R3XW"
+};
+
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// Populate day selector
+const daySelect = document.getElementById('daySelect');
+for (let i = 1; i <= 40; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `יום ${i}`;
+    daySelect.appendChild(option);
+}
+
+let dailyChart, overallChart;
+
+// Function to fetch and display data
+function fetchData() {
+    showLoading(true);
+    const selectedDay = daySelect.value;
+    const prayersRef = database.ref('prayers');
+    prayersRef.once('value').then((snapshot) => {
+        const data = snapshot.val();
+        updateDailyStats(data, selectedDay);
+        updateOverallStats(data);
+        updatePersonalStats(data);
+        showLoading(false);
+    }).catch((error) => {
+        console.error("Error fetching data:", error);
+        showLoading(false);
+    });
+}
+
+function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'flex' : 'none';
+    document.getElementById('prayerTable').style.display = show ? 'none' : 'table';
+}
+
+function updateDailyStats(data, selectedDay) {
+    const tableBody = document.querySelector('#prayerTable tbody');
+    tableBody.innerHTML = '';
+
+    let totalPrayers = 0;
+    let prayedToday = 0;
+
+    for (const person in data) {
+        totalPrayers++;
+        const row = document.createElement('tr');
+        const dayKey = `day${selectedDay}`;
+        const dayData = data[person][dayKey];
+        let prayerStatus = '';
+        
+        if (dayData && dayData.prayerDone !== undefined) {
+            if (dayData.prayerDone) {
+                prayerStatus = '<span class="true">התפלל</span>';
+                prayedToday++;
+            } else {
+                prayerStatus = '<span class="false">לא התפלל</span>';
+            }
+        } else {
+            prayerStatus = '<span class="false">אין מידע</span>';
+        }
+        
+        row.innerHTML = `<td>${person}</td><td>${prayerStatus}</td>`;
+        tableBody.appendChild(row);
+    }
+
+    // Update statistics
+    document.getElementById('totalPrayers').textContent = totalPrayers;
+    document.getElementById('prayedToday').textContent = prayedToday;
+    const completionRate = ((prayedToday / totalPrayers) * 100).toFixed(2);
+    document.getElementById('completionRate').textContent = `${completionRate}%`;
+
+    // Update daily chart
+    updateDailyChart(prayedToday, totalPrayers - prayedToday);
+
+    // Animate stats
+    anime({
+        targets: ['.stat-card p'],
+        innerHTML: (el) => [0, el.innerHTML],
+        round: 1,
+        easing: 'easeInOutExpo',
+        duration: 2000
+    });
+}
+
+function updateDailyChart(prayedCount, notPrayedCount) {
+    const ctx = document.getElementById('dailyChart').getContext('2d');
+    
+    if (dailyChart) {
+        dailyChart.destroy();
+    }
+    
+    dailyChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['התפללו', 'לא התפללו'],
+            datasets: [{
+                data: [prayedCount, notPrayedCount],
+                backgroundColor: ['#27ae60', '#e74c3c'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        }
+    });
+}
+
+function updateOverallStats(data) {
+    let totalPrayers = 0;
+    let totalDays = 40;
+    let dailyPrayers = new Array(totalDays).fill(0);
+    
+    for (const person in data) {
+        for (let day = 1; day <= totalDays; day++) {
+            const dayKey = `day${day}`;
+            if (data[person][dayKey] && data[person][dayKey].prayerDone) {
+                dailyPrayers[day - 1]++;
+                totalPrayers++;
+            }
+        }
+    }
+
+    const averagePrayers = (totalPrayers / totalDays).toFixed(2);
+    const bestDay = dailyPrayers.indexOf(Math.max(...dailyPrayers)) + 1;
+    const worstDay = dailyPrayers.indexOf(Math.min(...dailyPrayers)) + 1;
+
+    document.getElementById('averagePrayers').textContent = averagePrayers;
+    document.getElementById('bestDay').textContent = `יום ${bestDay}`;
+    document.getElementById('worstDay').textContent = `יום ${worstDay}`;
+
+    updateOverallChart(dailyPrayers);
+}
+
+function updateOverallChart(dailyPrayers) {
+    const ctx = document.getElementById('overallChart').getContext('2d');
+    
+    if (overallChart) {
+        overallChart.destroy();
+    }
+    
+    overallChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 40}, (_, i) => `יום ${i + 1}`),
+            datasets: [{
+                label: 'מספר תפילות',
+                data: dailyPrayers,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+function updatePersonalStats(data) {
+    const personStats = document.getElementById('personStats');
+    personStats.innerHTML = '';
+
+    for (const person in data) {
+        let prayedDays = 0;
+        let consecutiveDays = 0;
+        let maxConsecutiveDays = 0;
+        let currentStreak = 0;
+
+        for (let day = 1; day <= 40; day++) {
+            const dayKey = `day${day}`;
+            if (data[person][dayKey] && data[person][dayKey].prayerDone) {
+                prayedDays++;
+                consecutiveDays++;
+                currentStreak++;
+                maxConsecutiveDays = Math.max(maxConsecutiveDays, consecutiveDays);
+            } else {
+                consecutiveDays = 0;
+            }
+        }
+
+        const completionRate = ((prayedDays / 40) * 100).toFixed(2);
+
+        const personCard = document.createElement('div');
+        personCard.className = 'stat-card';
+        personCard.innerHTML = `
+            <h3>${person}</h3>
+            <p>ימי תפילה: ${prayedDays}</p>
+            <p>אחוז השלמה: ${completionRate}%</p>
+            <p>רצף תפילות מקסימלי: ${maxConsecutiveDays}</p>
+            <p>רצף תפילות נוכחי: ${currentStreak}</p>
+        `;
+        personStats.appendChild(personCard);
+    }
+
+    anime({
+        targets: '.person-stats',
+        opacity: [0, 1],
+        translateY: [20, 0],
+        delay: anime.stagger(100),
+        easing: 'easeOutQuad',
+        duration: 500
+    });
+}
+
+// Fetch data when the page loads
+document.addEventListener('DOMContentLoaded', fetchData);
+</script>
+
+</body></html>
